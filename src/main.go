@@ -8,6 +8,7 @@ import (
 	"aoc2023/src/d05"
 	"aoc2023/src/d06"
 	"aoc2023/src/d07"
+	"aoc2023/src/d08"
 	"fmt"
 	"sort"
 	"time"
@@ -28,6 +29,7 @@ var days = []Day{
 	{5, d05.Main},
 	{6, d06.Main},
 	{7, d07.Main},
+	{8, d08.Main},
 }
 
 func main() {
