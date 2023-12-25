@@ -2,6 +2,7 @@ package d10
 
 import (
 	"aoc2023/src/util"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -57,22 +58,15 @@ func InitRoute(x, y int, char byte) *Route {
 
 func Main() {
 	logger = *log.Default()
+	logger.SetLevel(log.InfoLevel)
 
-	data, err := util.ReadExampleInput(10)
+	data, err := util.ReadInput(10)
 	if err != nil {
 		panic(err)
 	}
 
 	m := parseInput(data)
-	log.Info(m)
 	one(m)
-
-	m = Map{
-		{'0', '1', '2'},
-		{'3', '4', '5'},
-		{'6', '7', '8'},
-	}
-	logger.Info(m)
 }
 
 func parseInput(data []byte) Map {
@@ -107,7 +101,7 @@ func one(input Map) {
 		return
 	}
 
-	current := &Route{
+	root := &Route{
 		StepsFromStart: 0,
 		X:              startingX,
 		Y:              startingY,
@@ -124,53 +118,36 @@ func one(input Map) {
 	nextY := -1
 
 	if north.ConnectsSouth {
-		current.ConnectsNorth = true
+		root.ConnectsNorth = true
 		nextX = north.X
 		nextY = north.Y
 	}
 	if east.ConnectsWest {
-		current.ConnectsWest = true
+		root.ConnectsWest = true
 		nextX = east.X
 		nextY = east.Y
 	}
 	if south.ConnectsNorth {
-		current.ConnectsSouth = true
+		root.ConnectsSouth = true
 		nextX = south.X
 		nextY = south.Y
 	}
 	if west.ConnectsEast {
-		current.ConnectsWest = true
+		root.ConnectsWest = true
 		nextX = west.X
 		nextY = west.Y
 	}
 
-	switch true {
-	case north.ConnectsSouth:
-		nextX = north.X
-		nextY = north.Y
-		break
-	case east.ConnectsWest:
-		nextX = east.X
-		nextY = east.Y
-		break
-	case south.ConnectsNorth:
-		nextX = south.X
-		nextY = south.Y
-		break
-	case west.ConnectsEast:
-		nextX = west.X
-		nextY = west.Y
-		break
-	}
-
-	current.Next = walk(input, current, nextX, nextY)
-
-	logger.Info("part 1: %d", 0)
+	root.Next, root.Prev = walk(input, root, nextX, nextY)
+	middle := math.Ceil(float64(root.Prev.StepsFromStart) / 2)
+	logger.Infof("part 1: %d", int(middle))
 }
 
-func walk(input Map, previous *Route, currX, currY int) *Route {
+func walk(input Map, previous *Route, currX, currY int) (*Route, *Route) {
+	logger.Debugf("(%d, %d) %s", currX, currY, string(input[currY][currX]))
 	if input[currY][currX] == 'S' {
-		return nil
+		logger.Debug("looped around")
+		return nil, previous
 	}
 
 	nextX := currX
@@ -181,23 +158,30 @@ func walk(input Map, previous *Route, currX, currY int) *Route {
 	route.Prev = previous
 
 	fromNorth := previous.Y == currY-1
-	fromEast := previous.X == currX-1
+	fromEast := previous.X == currX+1
 	fromSouth := previous.Y == currY+1
-	fromWest := previous.X == currX+1
+	fromWest := previous.X == currX-1
 
 	switch {
 	case !fromNorth && route.ConnectsNorth:
-		nextY++
+		logger.Debug("going north")
+		nextY--
 	case !fromEast && route.ConnectsEast:
+		logger.Debug("going east")
 		nextX++
 	case !fromSouth && route.ConnectsSouth:
-		nextY--
+		logger.Debug("going south")
+		nextY++
 	case !fromWest && route.ConnectsWest:
+		logger.Debug("going west")
 		nextX--
 	}
 
-	route.Next = walk(input, previous, nextX, nextY)
-	return route
+	next, last := walk(input, route, nextX, nextY)
+	if next != nil {
+		route.Next = next
+	}
+	return route, last
 }
 
 func getStartingPoint(input Map) (int, int) {
@@ -212,5 +196,5 @@ func getStartingPoint(input Map) (int, int) {
 }
 
 func two() {
-	logger.Info("part 2: %d", 0)
+	logger.Infof("part 2: %d", 0)
 }
